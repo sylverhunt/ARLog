@@ -1,98 +1,290 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>AR.js Hiro Marker dengan 3D Controls (Rotate & Zoom)</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>LogiFlow AR - Full End-to-End Supply Chain Simulation</title>
+    
+    <!-- A-Frame Framework -->
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <!-- AR.js Engine -->
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+    <!-- Gesture Detector & Handler Library (untuk Rotate 360° & Pinch Zoom) -->
+    <script src="https://raw.githack.com/fcor/arjs-gestures/master/dist/gestures.js"></script>
+    
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
 
-  <!-- Library A-Frame & AR.js -->
-  <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
-  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
-  
-  <!-- Script Gesture Detector & Handler untuk AR Drag/Rotate/Scale -->
-  <script src="https://raw.githack.com/fcor/arjs-gestures/master/dist/gestures.js"></script>
+        /* Top HUD Dashboard */
+        .hud-top {
+            position: fixed;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 480px;
+            background: rgba(15, 23, 42, 0.88);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(59, 130, 246, 0.4);
+            color: #ffffff;
+            padding: 10px 14px;
+            border-radius: 14px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+            z-index: 999;
+        }
 
-  <style>
-    body {
-      margin: 0;
-      overflow: hidden;
-      font-family: sans-serif;
-    }
-    #ui-container {
-      position: absolute;
-      top: 15px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 1000;
-      background: rgba(0, 0, 0, 0.7);
-      color: #fff;
-      padding: 10px 18px;
-      border-radius: 20px;
-      font-size: 14px;
-      text-align: center;
-      pointer-events: none;
-    }
-  </style>
+        .hud-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 6px;
+            margin-bottom: 8px;
+        }
+
+        .hud-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #38BDF8;
+            letter-spacing: 0.5px;
+        }
+
+        .status-badge {
+            background: #22C55E;
+            color: #022C22;
+            font-size: 0.65rem;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 20px;
+            text-transform: uppercase;
+        }
+
+        .hud-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            text-align: center;
+        }
+
+        .hud-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 5px;
+            border-radius: 8px;
+        }
+
+        .hud-val {
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: #4ADE80;
+        }
+
+        .hud-lbl {
+            font-size: 0.6rem;
+            color: #94A3B8;
+        }
+
+        /* Footer Instruction Banner */
+        .ar-instructions {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 999;
+            background: rgba(0, 0, 0, 0.85);
+            color: #38BDF8;
+            padding: 8px 18px;
+            border-radius: 25px;
+            font-size: 0.75rem;
+            border: 1px solid #38BDF8;
+            text-align: center;
+            letter-spacing: 0.3px;
+        }
+    </style>
 </head>
-
 <body>
 
-  <div id="ui-container">
-    Arahkan kamera ke <b>Hiro Marker</b><br>
-    <i>Drag 1 jari: Putar 360° | Pinch 2 jari: Zoom In/Out</i>
-  </div>
+    <!-- HUD Real-Time Analytics -->
+    <div class="hud-top">
+        <div class="hud-header">
+            <span class="hud-title">🚚 LOGIFLOW: END-TO-END SUPPLY CHAIN AR</span>
+            <span class="status-badge">LIVE SIMULATION</span>
+        </div>
+        <div class="hud-grid">
+            <div class="hud-card">
+                <div class="hud-val">12 Boxes</div>
+                <div class="hud-lbl">Payload Batch</div>
+            </div>
+            <div class="hud-card">
+                <div class="hud-val">98.5%</div>
+                <div class="hud-lbl">Space Utilization</div>
+            </div>
+            <div class="hud-card">
+                <div class="hud-val">OPTIMIZED</div>
+                <div class="hud-lbl">Route Status</div>
+            </div>
+        </div>
+    </div>
 
-  <!-- a-scene dengan gesture-detector -->
-  <a-scene
-    embedded
-    arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
-    renderer="logarithmicDepthBuffer: true; colorManagement: true;"
-    gesture-detector
-    vr-mode-ui="enabled: false">
+    <div class="ar-instructions">
+        📷 Arahkan ke <b>Hiro Marker</b> | 👆 Drag 1 jari: Rotate 360° | 🤏 Pinch: Zoom
+    </div>
 
-    <!-- Aset Objek 3D / GLTF (Opsional) -->
-    <a-assets>
-      <!-- Ganti src jika punya model .gltf / .glb sendiri -->
-      <!-- <a-asset-item id="myModel" src="path/to/model.gltf"></a-asset-item> -->
-    </a-assets>
+    <!-- AR Scene Definition dengan Gesture Detector -->
+    <a-scene 
+        embedded 
+        arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix;"
+        renderer="colorManagement: true; physicallyCorrectLights: true; antialias: true; logarithmicDepthBuffer: true;"
+        gesture-detector
+        vr-mode-ui="enabled: false">
 
-    <!-- Hiro Marker -->
-    <a-marker 
-      preset="hiro" 
-      raycaster="objects: .clickable" 
-      emitevents="true" 
-      cursor="fuse: false; rayOrigin: mouse;">
-      
-      <!-- Container Objek 3D yang dapat di-Rotate & Scale via Drag Gesture -->
-      <a-entity
-        id="interactive-object"
-        class="clickable"
-        gesture-handler="rotationFactor: 6; minScale: 0.2; maxScale: 8;"
-        position="0 0.5 0"
-        scale="1 1 1">
+        <!-- Asset Manager -->
+        <a-assets>
+            <!-- 3D Truck Model -->
+            <a-asset-item id="truck-model" src="https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models/2.0/CesiumMilkTruck/glTF-Binary/CesiumMilkTruck.glb"></a-asset-item>
+        </a-assets>
 
-        <!-- 1. Contoh Objek Bawaan: Kubus Berwarna -->
-        <a-box 
-          position="0 0 0" 
-          material="color: #4CC3D9; metalness: 0.3; roughness: 0.4;" 
-          shadow>
-        </a-box>
+        <!-- Lighting setup -->
+        <a-light type="ambient" color="#ffffff" intensity="1.2"></a-light>
+        <a-light type="directional" position="2 4 2" intensity="1.5" cast-shadow="true"></a-light>
 
-        <!-- Tambahan hiasan agar terlihat jelas arah putarannya (360°) -->
-        <a-sphere position="0 0.6 0" radius="0.3" color="#EF2D5E"></a-sphere>
-        <a-cylinder position="0.6 0 0" radius="0.15" height="0.8" color="#FFC65D"></a-cylinder>
+        <!-- AR MARKER: HIRO -->
+        <a-marker 
+            preset="hiro" 
+            raycaster="objects: .clickable" 
+            emitevents="true" 
+            cursor="fuse: false; rayOrigin: mouse;">
 
-        <!-- 2. Jika memakai Model 3D Custom (.glb / .gltf), hapus a-box/sphere di atas dan pakai baris ini: -->
-        <!-- <a-entity gltf-model="#myModel" scale="0.5 0.5 0.5"></a-entity> -->
+            <!-- Container Utama Interaktif yang bisa di-rotate 360° & Zoom -->
+            <a-entity 
+                id="ar-main-container"
+                class="clickable"
+                gesture-handler="rotationFactor: 6; minScale: 0.2; maxScale: 8;"
+                position="0 0 0"
+                scale="1 1 1">
 
-      </a-entity>
+                <!-- 1. LANDASAN GRID DIGITAL LINGKUNGAN LOGISTIK -->
+                <a-plane position="0 0 0" rotation="-90 0 0" width="4.2" height="2.8" color="#0F172A" opacity="0.9">
+                    <a-grid position="0 0 0.01" width="4.2" height="2.8" color="#1E293B"></a-grid>
+                </a-plane>
 
-    </a-marker>
+                <!-- ======================================================== -->
+                <!-- 2. ZONA HULU: FULFILLMENT CENTER & LOADING AREA (KIRI) -->
+                <!-- ======================================================== -->
+                <a-entity id="loading-zone" position="-1.5 0 0">
+                    <!-- Gedung Gudang / Loading Dock -->
+                    <a-box position="0 0.5 -0.6" width="0.8" height="1.0" depth="0.8" color="#334155"></a-box>
+                    <a-box position="0 1.02 -0.6" width="0.85" height="0.05" depth="0.85" color="#0284C7"></a-box>
+                    <a-box position="0 0.35 -0.19" width="0.4" height="0.5" depth="0.02" color="#1E293B"></a-box>
 
-    <!-- AR Camera -->
-    <a-entity camera></a-entity>
+                    <!-- Conveyor Belt (Jalur Kardus Keluar dari Gudang) -->
+                    <a-box position="0 0.12 0.2" width="0.3" height="0.08" depth="0.8" color="#475569"></a-box>
+                    <a-cylinder position="0 0.08 0.2" rotation="0 0 90" radius="0.04" height="0.32" color="#0284C7"></a-cylinder>
 
-  </a-scene>
+                    <!-- Tumpukan Kardus Daur Ulang Siap Load (Pallet) -->
+                    <!-- Kayu Palet -->
+                    <a-box position="0.35 0.02 0.2" width="0.35" height="0.04" depth="0.35" color="#854D0E"></a-box>
+                    <!-- Kardus Stacking -->
+                    <a-box position="0.30 0.08 0.15" width="0.14" height="0.1" depth="0.14" color="#D97706"></a-box>
+                    <a-box position="0.42 0.08 0.15" width="0.14" height="0.1" depth="0.14" color="#B45309"></a-box>
+                    <a-box position="0.30 0.08 0.27" width="0.14" height="0.1" depth="0.14" color="#D97706"></a-box>
+                    <a-box position="0.42 0.08 0.27" width="0.14" height="0.1" depth="0.14" color="#B45309"></a-box>
+                    <!-- Kardus Layer 2 -->
+                    <a-box position="0.36 0.18 0.21" width="0.15" height="0.1" depth="0.15" color="#D97706"></a-box>
+
+                    <!-- Model Forklift Sederhana di Loading Zone -->
+                    <a-box position="-0.35 0.12 0.2" width="0.22" height="0.18" depth="0.3" color="#EAB308"></a-box>
+                    <a-box position="-0.35 0.25 0.1" width="0.2" height="0.15" depth="0.1" color="#1E293B"></a-box>
+                    <a-box position="-0.35 0.08 0.38" width="0.03" height="0.15" depth="0.1" color="#000000"></a-box>
+
+                    <!-- Animasi Kardus Bergerak di Conveyor (Proses Loading) -->
+                    <a-box position="0 0.20 -0.1" width="0.12" height="0.1" depth="0.12" color="#F59E0B"
+                           animation="property: position; to: 0 0.20 0.5; dur: 3000; easing: linear; loop: true">
+                        <a-box position="0 0.05 0" width="0.122" height="0.01" depth="0.04" color="#22C55E"></a-box>
+                    </a-box>
+
+                    <!-- Label Teks Loading Zone -->
+                    <a-text value="STAGE 1: LOADING DOCK\n(Palletizing & Eco-Packaging)" position="0 1.25 -0.6" align="center" color="#38BDF8" scale="0.35 0.35 0.35" side="double"></a-text>
+                </a-entity>
+
+                <!-- ======================================================== -->
+                <!-- 3. ZONA TRANSIT: JALANAN & TRUK BERJALAN (TENGAH)        -->
+                <!-- ======================================================== -->
+                <!-- Jalan Utama -->
+                <a-plane position="0 0.01 0" rotation="-90 0 0" width="3.8" height="0.35" color="#1E293B"></a-plane>
+                <!-- Marka Jalan Putih Putus-Putus -->
+                <a-box position="-1.2 0.02 0" width="0.25" height="0.005" depth="0.02" color="#FFFFFF"></a-box>
+                <a-box position="-0.6 0.02 0" width="0.25" height="0.005" depth="0.02" color="#FFFFFF"></a-box>
+                <a-box position="0 0.02 0" width="0.25" height="0.005" depth="0.02" color="#FFFFFF"></a-box>
+                <a-box position="0.6 0.02 0" width="0.25" height="0.005" depth="0.02" color="#FFFFFF"></a-box>
+                <a-box position="1.2 0.02 0" width="0.25" height="0.005" depth="0.02" color="#FFFFFF"></a-box>
+
+                <!-- Truk Berjalan (Moving Truck Animation) -->
+                <a-entity id="moving-truck-container"
+                          position="-1.4 0.05 0"
+                          rotation="0 90 0"
+                          scale="0.22 0.22 0.22"
+                          gltf-model="#truck-model"
+                          animation="property: position; to: 1.4 0.05 0; dur: 5000; easing: linear; loop: true">
+                </a-entity>
+
+                <!-- Kardus Muatan Melayang di Atas Truk Saat Berjalan -->
+                <a-entity position="-1.4 0.35 0"
+                          animation="property: position; to: 1.4 0.35 0; dur: 5000; easing: linear; loop: true">
+                    <a-box position="-0.05 0 0" width="0.08" height="0.08" depth="0.08" color="#D97706"></a-box>
+                    <a-box position="0.05 0 0" width="0.08" height="0.08" depth="0.08" color="#B45309"></a-box>
+                    <a-box position="0 0.08 0" width="0.08" height="0.08" depth="0.08" color="#F59E0B"></a-box>
+                </a-entity>
+
+                <!-- Papan Indikator In-Transit Melayang -->
+                <a-entity position="0 0.7 0" animation="property: position; dir: alternate; dur: 1200; easing: easeInOutSine; loop: true; to: 0 0.76 0">
+                    <a-plane position="0 0 0" width="1.5" height="0.32" color="#0F172A" opacity="0.85" side="double">
+                        <a-text value="STAGE 2: IN-TRANSIT\nEV Fleet | Route Optimization Active" position="0 0 0.01" align="center" color="#FACC15" scale="0.32 0.32 0.32"></a-text>
+                    </a-plane>
+                </a-entity>
+
+                <!-- ======================================================== -->
+                <!-- 4. ZONA HILIR: UNLOADING DOCK & DROP-BOX (KANAN)         -->
+                <!-- ======================================================== -->
+                <a-entity id="unloading-zone" position="1.5 0 0">
+                    <!-- Stasiun Drop-Box / Hub Penerimaan -->
+                    <a-box position="0 0.45 0.6" width="0.7" height="0.9" depth="0.7" color="#16A34A"></a-box>
+                    <a-cylinder position="0 0.92 0.6" radius="0.25" height="0.04" color="#22C55E"></a-cylinder>
+                    <a-box position="0 0.5 0.24" width="0.3" height="0.15" depth="0.02" color="#022C22"></a-box>
+
+                    <!-- Conveyor Masuk (Unloading Conveyor) -->
+                    <a-box position="0 0.12 -0.2" width="0.3" height="0.08" depth="0.8" color="#475569"></a-box>
+                    <a-cylinder position="0 0.08 -0.2" rotation="0 0 90" radius="0.04" height="0.32" color="#16A34A"></a-cylinder>
+
+                    <!-- Animasi Kardus Turun dari Truk ke Drop-Box (Proses Unloading) -->
+                    <a-box position="0 0.20 -0.5" width="0.12" height="0.1" depth="0.12" color="#F59E0B"
+                           animation="property: position; to: 0 0.20 0.2; dur: 3000; easing: linear; loop: true">
+                        <a-box position="0 0.05 0" width="0.122" height="0.01" depth="0.04" color="#22C55E"></a-box>
+                    </a-box>
+
+                    <!-- Tumpukan Kardus Hasil Unloading / Daur Ulang -->
+                    <a-box position="-0.35 0.06 0.2" width="0.14" height="0.1" depth="0.14" color="#D97706"></a-box>
+                    <a-box position="-0.35 0.06 0.35" width="0.14" height="0.1" depth="0.14" color="#B45309"></a-box>
+                    <a-box position="-0.35 0.16 0.27" width="0.14" height="0.1" depth="0.14" color="#F59E0B"></a-box>
+
+                    <!-- Label Teks Unloading Zone -->
+                    <a-text value="STAGE 3: UNLOADING & REVERSE\n(Smart Drop-Box & Recycling Hub)" position="0 1.25 0.6" align="center" color="#4ADE80" scale="0.35 0.35 0.35" side="double"></a-text>
+                </a-entity>
+
+                <!-- Garis Alur Koneksi Sistem Logistik (Green Flow Connector Line) -->
+                <a-cylinder position="0 0.03 -0.6" rotation="0 0 90" radius="0.015" height="3.2" color="#38BDF8"></a-cylinder>
+
+            </a-entity>
+
+        </a-marker>
+
+        <!-- Camera -->
+        <a-entity camera></a-entity>
+
+    </a-scene>
 
 </body>
 </html>
