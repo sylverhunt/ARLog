@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>AR.js Hiro Marker dengan 3D Controls (Rotate & Zoom)</title>
+
+  <!-- Library A-Frame & AR.js -->
+  <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
+  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+  
+  <!-- Script Gesture Detector & Handler untuk AR Drag/Rotate/Scale -->
+  <script src="https://raw.githack.com/fcor/arjs-gestures/master/dist/gestures.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: sans-serif;
+    }
+    #ui-container {
+      position: absolute;
+      top: 15px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 20px;
+      font-size: 14px;
+      text-align: center;
+      pointer-events: none;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="ui-container">
+    Arahkan kamera ke <b>Hiro Marker</b><br>
+    <i>Drag 1 jari: Putar 360° | Pinch 2 jari: Zoom In/Out</i>
+  </div>
+
+  <!-- a-scene dengan gesture-detector -->
+  <a-scene
+    embedded
+    arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
+    renderer="logarithmicDepthBuffer: true; colorManagement: true;"
+    gesture-detector
+    vr-mode-ui="enabled: false">
+
+    <!-- Aset Objek 3D / GLTF (Opsional) -->
+    <a-assets>
+      <!-- Ganti src jika punya model .gltf / .glb sendiri -->
+      <!-- <a-asset-item id="myModel" src="path/to/model.gltf"></a-asset-item> -->
+    </a-assets>
+
+    <!-- Hiro Marker -->
+    <a-marker 
+      preset="hiro" 
+      raycaster="objects: .clickable" 
+      emitevents="true" 
+      cursor="fuse: false; rayOrigin: mouse;">
+      
+      <!-- Container Objek 3D yang dapat di-Rotate & Scale via Drag Gesture -->
+      <a-entity
+        id="interactive-object"
+        class="clickable"
+        gesture-handler="rotationFactor: 6; minScale: 0.2; maxScale: 8;"
+        position="0 0.5 0"
+        scale="1 1 1">
+
+        <!-- 1. Contoh Objek Bawaan: Kubus Berwarna -->
+        <a-box 
+          position="0 0 0" 
+          material="color: #4CC3D9; metalness: 0.3; roughness: 0.4;" 
+          shadow>
+        </a-box>
+
+        <!-- Tambahan hiasan agar terlihat jelas arah putarannya (360°) -->
+        <a-sphere position="0 0.6 0" radius="0.3" color="#EF2D5E"></a-sphere>
+        <a-cylinder position="0.6 0 0" radius="0.15" height="0.8" color="#FFC65D"></a-cylinder>
+
+        <!-- 2. Jika memakai Model 3D Custom (.glb / .gltf), hapus a-box/sphere di atas dan pakai baris ini: -->
+        <!-- <a-entity gltf-model="#myModel" scale="0.5 0.5 0.5"></a-entity> -->
+
+      </a-entity>
+
+    </a-marker>
+
+    <!-- AR Camera -->
+    <a-entity camera></a-entity>
+
+  </a-scene>
+
+</body>
+</html>
